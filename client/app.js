@@ -1,5 +1,5 @@
 // client/app.js - recuperação definitiva (thumbnails + player)
-const API_BASE = 'http://localhost:4000';
+const API_BASE = window.location.origin;
 const row = document.getElementById('row-populares');
 const heroTitle = document.getElementById('hero-title');
 const heroDesc = document.getElementById('hero-desc');
