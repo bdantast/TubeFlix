@@ -11,29 +11,44 @@ app.use(express.json());
 
 const PORT = process.env.PORT || 4000;
 const CATALOG_FILE = path.join(__dirname, 'catalog.json');
+const DEFAULT_CATALOG = [
+  { id: "DGZsRoKYXPI", thumb: "" },
+  { id: "2MRcOdjY-QE", thumb: "" },
+  { id: "vcPr9USr2tA", thumb: "" },
+  { id: "2Vv-BfVoq4g", thumb: "" },
+  { id: "kXYiU_JCYtU", thumb: "" },
+  { id: "3JZ_D3ELwOQ", thumb: "" }
+];
 
 // --- utilitário de persistência simples ---
 function readCatalogFile() {
   try {
-    const raw = fs.readFileSync(CATALOG_FILE, 'utf8');
-    const data = JSON.parse(raw);
-    // Converter strings antigas para novo formato (compatibilidade)
-    return Array.isArray(data) ? data.map(item => 
-      typeof item === 'string' ? { id: item, thumb: '' } : item
-    ) : data;
+    // Tenta ler do arquivo (funciona localmente)
+    if (fs.existsSync(CATALOG_FILE)) {
+      const raw = fs.readFileSync(CATALOG_FILE, 'utf8');
+      const data = JSON.parse(raw);
+      // Converter strings antigas para novo formato (compatibilidade)
+      return Array.isArray(data) ? data.map(item => 
+        typeof item === 'string' ? { id: item, thumb: '' } : item
+      ) : data;
+    }
   } catch (e) {
-    const initial = [
-      { id: "2Vv-BfVoq4g", thumb: "" },
-      { id: "kXYiU_JCYtU", thumb: "" },
-      { id: "3JZ_D3ELwOQ", thumb: "" }
-    ];
-    fs.writeFileSync(CATALOG_FILE, JSON.stringify(initial, null, 2), 'utf8');
-    return initial;
+    console.log('Arquivo catalog.json não encontrado, usando padrão');
   }
+  
+  // Fallback para padrão (funciona no Vercel)
+  return DEFAULT_CATALOG;
 }
 
 function writeCatalogFile(ids) {
-  fs.writeFileSync(CATALOG_FILE, JSON.stringify(ids, null, 2), 'utf8');
+  try {
+    // Tenta salvar no arquivo (funciona localmente)
+    if (process.env.NODE_ENV !== 'production') {
+      fs.writeFileSync(CATALOG_FILE, JSON.stringify(ids, null, 2), 'utf8');
+    }
+  } catch (e) {
+    console.log('Não foi possível salvar o arquivo (esperado no Vercel)');
+  }
 }
 
 // --- catálogo em memória com persistência em arquivo ---
