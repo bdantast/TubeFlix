@@ -44,21 +44,31 @@ async function loadCatalog(){
       categories[cat].push(it);
     });
     
+    // Ordenar categorias alfabeticamente
+    const sortedCats = Object.keys(categories).sort();
+    
     // Renderizar cada categoria
     let html = '';
-    for (const [cat, videos] of Object.entries(categories)) {
-      html += `<div class="category-section"><h3>${cat}</h3><div class="row">`;
+    sortedCats.forEach(cat => {
+      const videos = categories[cat];
+      html += `<div class="category-section">
+        <h3>${cat}</h3>
+        <div class="row">`;
       html += videos.map(it => `
         <div class="card">
           <img src="${it.thumb || 'https://img.youtube.com/vi/' + it.id + '/hqdefault.jpg'}" alt="${it.title || ''}" class="card-thumb">
-          <h4 class="card-title">${it.title || ''}</h4>
-          <p class="card-author">${it.author_name || ''}</p>
-          <p class="card-description">${it.description || ''}</p>
-          <button class="watch" data-id="${it.id}">Assistir</button>
+          <div style="padding:8px;height:140px;display:flex;flex-direction:column;justify-content:space-between">
+            <div>
+              <h4 class="card-title">${it.title || ''}</h4>
+              <p class="card-author">${it.author_name || ''}</p>
+              <p class="card-description">${it.description || ''}</p>
+            </div>
+            <button class="watch" data-id="${it.id}">Assistir</button>
+          </div>
         </div>
       `).join('');
       html += `</div></div>`;
-    }
+    });
     row.innerHTML = html;
     
     document.querySelectorAll('.watch').forEach(b => b.addEventListener('click', e => openModal(e.currentTarget.dataset.id)));
