@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>MeuCinema</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="logo">MeuCinema</div>
+    <input id="search" placeholder="Buscar filmes..." />
+  </header>
+
+  <main>
+    <section class="hero" id="hero">
+      <div class="hero-info">
+        <h1 id="hero-title">Carregando...</h1>
+        <p id="hero-desc"></p>
+        <button id="watch-btn">Assistir</button>
+      </div>
+    </section>
+
+    <section class="catalog">
+      <h2>Populares</h2>
+      <div class="row" id="row-populares"></div>
+    </section>
+  </main>
+
+  <div id="player-modal" class="modal hidden" aria-hidden="true">
+    <div class="modal-content" role="dialog" aria-modal="true">
+      <button id="close-modal" class="close" aria-label="Fechar">×</button>
+      <div id="player-container"></div>
+      <div class="player-actions">
+        <button id="open-youtube">Abrir no YouTube</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://www.youtube.com/iframe_api"></script>
+  <script src="app.js"></script>
+</body>
+</html>

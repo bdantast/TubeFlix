@@ -1,0 +1,40 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Admin - Catálogo</title>
+  <style>
+    body{font-family:Arial,Helvetica,sans-serif;padding:20px;background:#f5f5f5}
+    h2{color:#333}
+    p{color:#666}
+    .form-group{margin:12px 0;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+    input{padding:8px;border:1px solid #ddd;border-radius:4px;font-size:14px}
+    input:focus{outline:0;border-color:#e50914}
+    button{padding:8px 16px;margin:0;background:#e50914;color:#fff;border:0;border-radius:4px;cursor:pointer;font-weight:600}
+    button:hover{background:#cc070d}
+    .list{margin-top:20px;background:#fff;padding:16px;border-radius:4px}
+    .item{display:flex;align-items:center;padding:12px;border-bottom:1px solid #eee;gap:12px}
+    .item:last-child{border-bottom:0}
+    .item small{color:#999;display:block}
+    .remove{background:#999;padding:6px 12px;font-size:12px}
+    .remove:hover{background:#666}
+    #new-id{min-width:200px}
+    #new-thumb{flex:1;min-width:300px}
+  </style>
+</head>
+<body>
+  <h2>Admin do Catálogo</h2>
+  <p>Adicione ou remova IDs do YouTube. As mudanças são persistidas em server/catalog.json.</p>
+
+  <div class="form-group">
+    <input id="new-id" placeholder="ID do YouTube (ex: dQw4w9WgXcQ)">
+    <input id="new-thumb" placeholder="URL da thumbnail (opcional - deixe em branco para usar YouTube)">
+    <button id="add-btn">Adicionar</button>
+    <button id="refresh-btn">Atualizar lista</button>
+  </div>
+
+  <div class="list" id="ids-list"></div>
+
+  <script src="./admin.js"></script>
+</body>
+</html>
