@@ -1,14 +1,38 @@
 [
   {
     "id": "DGZsRoKYXPI",
-    "thumb": ""
+    "thumb": "",
+    "category": "Filmes",
+    "description": "Uma história de fuga emocionante"
   },
   {
     "id": "2MRcOdjY-QE",
-    "thumb": ""
+    "thumb": "",
+    "category": "Filmes",
+    "description": "Drama com atuações incríveis"
   },
   {
     "id": "vcPr9USr2tA",
-    "thumb": ""
+    "thumb": "",
+    "category": "Filmes",
+    "description": "Suspense que te prende do início ao fim"
+  },
+  {
+    "id": "2Vv-BfVoq4g",
+    "thumb": "",
+    "category": "Musicais",
+    "description": "Clipe musical oficial"
+  },
+  {
+    "id": "kXYiU_JCYtU",
+    "thumb": "",
+    "category": "Musicais",
+    "description": "Música clássica remasterizada"
+  },
+  {
+    "id": "3JZ_D3ELwOQ",
+    "thumb": "",
+    "category": "Musicais",
+    "description": "Novo lançamento da temporada"
   }
 ]

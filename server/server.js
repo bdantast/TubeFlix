@@ -12,12 +12,12 @@ app.use(express.json());
 const PORT = process.env.PORT || 4000;
 const CATALOG_FILE = path.join(__dirname, 'catalog.json');
 const DEFAULT_CATALOG = [
-  { id: "DGZsRoKYXPI", thumb: "" },
-  { id: "2MRcOdjY-QE", thumb: "" },
-  { id: "vcPr9USr2tA", thumb: "" },
-  { id: "2Vv-BfVoq4g", thumb: "" },
-  { id: "kXYiU_JCYtU", thumb: "" },
-  { id: "3JZ_D3ELwOQ", thumb: "" }
+  { id: "DGZsRoKYXPI", thumb: "", category: "Filmes", description: "Uma história de fuga emocionante" },
+  { id: "2MRcOdjY-QE", thumb: "", category: "Filmes", description: "Drama com atuações incríveis" },
+  { id: "vcPr9USr2tA", thumb: "", category: "Filmes", description: "Suspense que te prende" },
+  { id: "2Vv-BfVoq4g", thumb: "", category: "Musicais", description: "Clipe musical oficial" },
+  { id: "kXYiU_JCYtU", thumb: "", category: "Musicais", description: "Música clássica remasterizada" },
+  { id: "3JZ_D3ELwOQ", thumb: "", category: "Musicais", description: "Novo lançamento" }
 ];
 
 // --- utilitário de persistência simples ---
@@ -96,10 +96,10 @@ app.get('/api/catalog', async (req, res) => {
 app.get('/api/ids', (req, res) => res.json({ items: CATALOG_ITEMS }));
 
 app.post('/api/catalog/add', (req, res) => {
-  const { id, thumb } = req.body;
+  const { id, thumb, category, description } = req.body;
   if (!id) return res.status(400).json({ error: 'id é obrigatório' });
   if (!CATALOG_ITEMS.find(i => (i.id || i) === id)) {
-    CATALOG_ITEMS.push({ id, thumb: thumb || '' });
+    CATALOG_ITEMS.push({ id, thumb: thumb || '', category: category || 'Diversos', description: description || '' });
     writeCatalogFile(CATALOG_ITEMS);
     cache.ts = 0; // invalidar cache
   }

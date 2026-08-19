@@ -35,15 +35,34 @@ async function loadCatalog(){
     const data = await res.json();
     const items = data.items || [];
     if (!row) return console.error('row-populares não encontrado');
-    row.innerHTML = items.map(it => `
-      <div class="card">
-        <img src="${it.thumb || 'https://img.youtube.com/vi/' + it.id + '/hqdefault.jpg'}" alt="${it.title || ''}" class="card-thumb">
-        <h3 class="card-title">${it.title || ''}</h3>
-        <p class="card-author">${it.author_name || ''}</p>
-        <button class="watch" data-id="${it.id}">Assistir</button>
-      </div>
-    `).join('');
+    
+    // Agrupar por categoria
+    const categories = {};
+    items.forEach(it => {
+      const cat = it.category || 'Diversos';
+      if (!categories[cat]) categories[cat] = [];
+      categories[cat].push(it);
+    });
+    
+    // Renderizar cada categoria
+    let html = '';
+    for (const [cat, videos] of Object.entries(categories)) {
+      html += `<div class="category-section"><h3>${cat}</h3><div class="row">`;
+      html += videos.map(it => `
+        <div class="card">
+          <img src="${it.thumb || 'https://img.youtube.com/vi/' + it.id + '/hqdefault.jpg'}" alt="${it.title || ''}" class="card-thumb">
+          <h4 class="card-title">${it.title || ''}</h4>
+          <p class="card-author">${it.author_name || ''}</p>
+          <p class="card-description">${it.description || ''}</p>
+          <button class="watch" data-id="${it.id}">Assistir</button>
+        </div>
+      `).join('');
+      html += `</div></div>`;
+    }
+    row.innerHTML = html;
+    
     document.querySelectorAll('.watch').forEach(b => b.addEventListener('click', e => openModal(e.currentTarget.dataset.id)));
+    
     // hero
     if (items.length) {
       const hero = document.getElementById('hero');
@@ -51,7 +70,7 @@ async function loadCatalog(){
         hero.style.backgroundImage = `url('${items[0].thumb}')`;
       }
       if (heroTitle) heroTitle.textContent = items[0].title || '';
-      if (heroDesc) heroDesc.textContent = items[0].author_name || '';
+      if (heroDesc) heroDesc.textContent = items[0].description || items[0].author_name || '';
       if (heroWatchBtn) heroWatchBtn.onclick = () => openModal(items[0].id);
     }
   } catch (err) {

@@ -2,6 +2,8 @@
 const API_BASE = window.location.origin;
 const newIdInput = document.getElementById('new-id');
 const newThumbInput = document.getElementById('new-thumb');
+const newCategoryInput = document.getElementById('new-category');
+const newDescriptionInput = document.getElementById('new-description');
 const addBtn = document.getElementById('add-btn');
 const refreshBtn = document.getElementById('refresh-btn');
 const idsList = document.getElementById('ids-list');
@@ -22,11 +24,15 @@ function renderIds(items){
   idsList.innerHTML = items.map(item => {
     const id = item.id || item;
     const thumb = item.thumb || '';
+    const category = item.category || 'Diversos';
+    const description = item.description || '';
     return `
       <div class="item">
         <div style="flex: 1;">
           <strong>ID: ${id}</strong><br>
-          <small>Thumb: ${thumb ? thumb.substring(0, 50) + '...' : '(padrão YouTube)'}</small>
+          <small>Categoria: ${category}</small><br>
+          <small>Descrição: ${description.substring(0, 50)}</small><br>
+          <small>Thumb: ${thumb ? thumb.substring(0, 40) + '...' : '(padrão)'}</small>
         </div>
         <button data-id="${id}" class="remove">Remover</button>
       </div>
@@ -43,12 +49,12 @@ async function loadAndRender(){
   renderIds(items);
 }
 
-async function addId(id, thumb){
+async function addId(id, thumb, category, description){
   try {
     const res = await fetch(`${API_BASE}/api/catalog/add`, {
       method: 'POST',
       headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ id, thumb })
+      body: JSON.stringify({ id, thumb, category, description })
     });
     if (!res.ok) throw new Error('HTTP ' + res.status);
     await loadAndRender();
@@ -79,10 +85,14 @@ async function removeId(id){
 addBtn.addEventListener('click', () => {
   const id = (newIdInput.value || '').trim();
   const thumb = (newThumbInput.value || '').trim();
+  const category = (newCategoryInput.value || '').trim();
+  const description = (newDescriptionInput.value || '').trim();
   if (!id) return alert('Digite um ID');
-  addId(id, thumb);
+  addId(id, thumb, category || 'Diversos', description);
   newIdInput.value = '';
   newThumbInput.value = '';
+  newCategoryInput.value = '';
+  newDescriptionInput.value = '';
 });
 
 refreshBtn.addEventListener('click', loadAndRender);
