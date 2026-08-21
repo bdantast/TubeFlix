@@ -3,13 +3,14 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="description" content="MeuCinema — seu catálogo pessoal de vídeos no estilo streaming." />
   <title>MeuCinema</title>
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
   <header class="topbar">
-    <div class="logo">MeuCinema</div>
-    <input id="search" placeholder="Buscar filmes..." />
+    <a class="logo" href="./">Meu<span>Cinema</span></a>
+    <input id="search" type="search" placeholder="Buscar por título, canal, categoria..." autocomplete="off" />
   </header>
 
   <main>
@@ -17,27 +18,32 @@
       <div class="hero-info">
         <h1 id="hero-title">Carregando...</h1>
         <p id="hero-desc"></p>
-        <button id="watch-btn">Assistir</button>
+        <div class="hero-actions">
+          <button id="watch-btn" class="btn btn-primary">Assistir</button>
+          <button id="hero-youtube" class="btn btn-ghost">Abrir no YouTube</button>
+        </div>
       </div>
     </section>
 
-    <section class="catalog">
-      <h2>Populares</h2>
-      <div class="row" id="row-populares"></div>
+    <section class="catalog" aria-label="Catálogo de vídeos">
+      <div id="row-populares"></div>
     </section>
   </main>
 
+  <footer>
+    MeuCinema · catálogo pessoal de vídeos do YouTube
+  </footer>
+
   <div id="player-modal" class="modal hidden" aria-hidden="true">
-    <div class="modal-content" role="dialog" aria-modal="true">
+    <div class="modal-content" role="dialog" aria-modal="true" aria-label="Player de vídeo">
       <button id="close-modal" class="close" aria-label="Fechar">×</button>
       <div id="player-container"></div>
       <div class="player-actions">
-        <button id="open-youtube">Abrir no YouTube</button>
+        <button id="open-youtube" class="btn btn-ghost">Abrir no YouTube</button>
       </div>
     </div>
   </div>
 
-  <script src="https://www.youtube.com/iframe_api"></script>
   <script src="app.js"></script>
 </body>
 </html>
