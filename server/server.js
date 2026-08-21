@@ -117,7 +117,7 @@ function ensureLoaded() {
 
 // --- cache simples para reduzir chamadas ao oEmbed ---
 let cache = { ts: 0, items: [] };
-const CACHE_TTL = 1000 * 60 * 5;
+const CACHE_TTL = 1000 * 60;
 
 async function fetchOEmbed(item) {
   const id = item.id;
@@ -171,6 +171,38 @@ app.get('/api/health', async (req, res) => {
     result.redisWritable = false;
   }
   res.json(result);
+});
+
+app.get('/api/debug/storage', async (req, res) => {
+  const token = process.env.ADMIN_TOKEN;
+  const provided = req.get('x-admin-token') || req.query.token;
+  if (!token || provided !== token) {
+    return res.status(401).json({ error: 'Acesso restrito. Use ?token=SEU_ADMIN_TOKEN' });
+  }
+  await ensureLoaded();
+  let armazenado = null;
+  if (useRedis) {
+    try {
+      const r = await axios.get(`${UPSTASH_URL}/get/${REDIS_KEY}`, {
+        headers: { Authorization: `Bearer ${UPSTASH_TOKEN}` },
+        timeout: 5000
+      });
+      const raw = r.data && r.data.result;
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        armazenado = Array.isArray(parsed) ? parsed.map(i => ({ id: i.id, title: i.title || '' })) : String(raw).substring(0, 100);
+      }
+    } catch (e) {
+      armazenado = `ERRO AO LER: ${e.message}`;
+    }
+  }
+  res.json({
+    redisConfigured: useRedis,
+    salvoNoRedis: armazenado === null ? '(chave inexistente)' : armazenado,
+    totalSalvoNoRedis: Array.isArray(armazenado) ? armazenado.length : null,
+    emMemoriaNestaInstancia: CATALOG_ITEMS.length,
+    cacheIdadeSegundos: cache.ts ? Math.round((Date.now() - cache.ts) / 1000) : null
+  });
 });
 
 // --- endpoints públicos ---
