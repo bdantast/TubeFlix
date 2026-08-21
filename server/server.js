@@ -59,7 +59,11 @@ async function redisGet() {
   });
   const raw = res.data && res.data.result;
   if (!raw) return null;
-  try { return JSON.parse(raw); } catch (e) { return null; }
+  // gravações são feitas com encodeURIComponent; aceita também JSON puro
+  try { return JSON.parse(decodeURIComponent(raw)); }
+  catch (e1) {
+    try { return JSON.parse(raw); } catch (e2) { return null; }
+  }
 }
 
 async function redisSet(items) {
@@ -183,15 +187,8 @@ app.get('/api/debug/storage', async (req, res) => {
   let armazenado = null;
   if (useRedis) {
     try {
-      const r = await axios.get(`${UPSTASH_URL}/get/${REDIS_KEY}`, {
-        headers: { Authorization: `Bearer ${UPSTASH_TOKEN}` },
-        timeout: 5000
-      });
-      const raw = r.data && r.data.result;
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        armazenado = Array.isArray(parsed) ? parsed.map(i => ({ id: i.id, title: i.title || '' })) : String(raw).substring(0, 100);
-      }
+      const val = await redisGet();
+      armazenado = Array.isArray(val) ? val.map(i => ({ id: i.id, title: i.title || '' })) : String(val);
     } catch (e) {
       armazenado = `ERRO AO LER: ${e.message}`;
     }
