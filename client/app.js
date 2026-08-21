@@ -16,6 +16,7 @@ const closeModalBtn = document.getElementById('close-modal');
 
 let ALL_ITEMS = [];
 let currentQuery = '';
+const PREVIEW_START = 600; // prévias começam em 10 minutos do vídeo
 
 function thumbFor(it) {
   return it.thumb || `https://img.youtube.com/vi/${it.id}/hqdefault.jpg`;
@@ -72,7 +73,7 @@ function showHeroSlide(i) {
   heroPreviewTimer = setTimeout(() => {
     const holder = bgs[i] && bgs[i].querySelector('.hero-video');
     if (!holder || i !== heroIndex) return;
-    holder.innerHTML = `<iframe src="https://www.youtube.com/embed/${encodeURIComponent(it.id)}?autoplay=1&mute=1&controls=0&modestbranding=1&rel=0&loop=1&playlist=${encodeURIComponent(it.id)}&playsinline=1" allow="autoplay; encrypted-media" frameborder="0" tabindex="-1" title="Prévia"></iframe>`;
+    holder.innerHTML = `<iframe src="https://www.youtube.com/embed/${encodeURIComponent(it.id)}?autoplay=1&mute=1&controls=0&modestbranding=1&rel=0&loop=1&playlist=${encodeURIComponent(it.id)}&playsinline=1&start=${PREVIEW_START}" allow="autoplay; encrypted-media" frameborder="0" tabindex="-1" title="Prévia"></iframe>`;
     const frame = holder.querySelector('iframe');
     frame.addEventListener('load', () => { if (i === heroIndex) holder.classList.add('playing'); });
   }, 1000);
@@ -206,7 +207,7 @@ function wireHoverPreviews() {
     card.addEventListener('mouseenter', () => {
       timer = setTimeout(() => {
         const id = card.dataset.open;
-        holder.innerHTML = `<iframe src="https://www.youtube.com/embed/${encodeURIComponent(id)}?autoplay=1&mute=1&controls=0&modestbranding=1&rel=0&loop=1&playlist=${encodeURIComponent(id)}&playsinline=1" allow="autoplay; encrypted-media" frameborder="0" tabindex="-1" title="Prévia"></iframe>`;
+        holder.innerHTML = `<iframe src="https://www.youtube.com/embed/${encodeURIComponent(id)}?autoplay=1&mute=1&controls=0&modestbranding=1&rel=0&loop=1&playlist=${encodeURIComponent(id)}&playsinline=1&start=${PREVIEW_START}" allow="autoplay; encrypted-media" frameborder="0" tabindex="-1" title="Prévia"></iframe>`;
       }, 800);
     });
     card.addEventListener('mouseleave', () => {
