@@ -11,56 +11,112 @@ app.use(express.json());
 
 const PORT = process.env.PORT || 4000;
 const CATALOG_FILE = path.join(__dirname, 'catalog.json');
+const YOUTUBE_ID_RE = /^[A-Za-z0-9_-]{11}$/;
+const IS_PROD = process.env.NODE_ENV === 'production';
+
+// --- armazenamento: Upstash Redis REST (produção) ou arquivo JSON (local) ---
+const REDIS_KEY = 'tubeflix:catalog';
+const UPSTASH_URL = process.env.UPSTASH_REDIS_REST_URL;
+const UPSTASH_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN;
+const useRedis = Boolean(UPSTASH_URL && UPSTASH_TOKEN);
+
 const DEFAULT_CATALOG = [
-  { id: "DGZsRoKYXPI", thumb: "", category: "Filmes", description: "Uma história de fuga emocionante" },
-  { id: "2MRcOdjY-QE", thumb: "", category: "Filmes", description: "Drama com atuações incríveis" },
-  { id: "vcPr9USr2tA", thumb: "", category: "Filmes", description: "Suspense que te prende" },
-  { id: "2Vv-BfVoq4g", thumb: "", category: "Musicais", description: "Clipe musical oficial" },
-  { id: "kXYiU_JCYtU", thumb: "", category: "Musicais", description: "Música clássica remasterizada" },
-  { id: "3JZ_D3ELwOQ", thumb: "", category: "Musicais", description: "Novo lançamento" }
+  { id: 'DGZsRoKYXPI', thumb: '', category: 'Filmes', description: 'Uma história de fuga emocionante' },
+  { id: '2MRcOdjY-QE', thumb: '', category: 'Filmes', description: 'Drama com atuações incríveis' },
+  { id: 'vcPr9USr2tA', thumb: '', category: 'Filmes', description: 'Suspense que te prende' },
+  { id: '2Vv-BfVoq4g', thumb: '', category: 'Musicais', description: 'Clipe musical oficial' },
+  { id: 'kXYiU_JCYtU', thumb: '', category: 'Musicais', description: 'Música clássica remasterizada' },
+  { id: '3JZ_D3ELwOQ', thumb: '', category: 'Musicais', description: 'Novo lançamento' }
 ];
 
-// --- utilitário de persistência simples ---
+function normalizeItem(item) {
+  if (typeof item === 'string') return { id: item, thumb: '', category: 'Diversos', description: '' };
+  return {
+    id: String(item.id || ''),
+    thumb: typeof item.thumb === 'string' && /^https:\/\//.test(item.thumb) ? item.thumb : '',
+    category: item.category || 'Diversos',
+    description: item.description || ''
+  };
+}
+
 function readCatalogFile() {
   try {
-    // Tenta ler do arquivo (funciona localmente)
     if (fs.existsSync(CATALOG_FILE)) {
-      const raw = fs.readFileSync(CATALOG_FILE, 'utf8');
-      const data = JSON.parse(raw);
-      // Converter strings antigas para novo formato (compatibilidade)
-      return Array.isArray(data) ? data.map(item => 
-        typeof item === 'string' ? { id: item, thumb: '' } : item
-      ) : data;
+      const data = JSON.parse(fs.readFileSync(CATALOG_FILE, 'utf8'));
+      if (Array.isArray(data)) return data.map(normalizeItem);
     }
   } catch (e) {
-    console.log('Arquivo catalog.json não encontrado, usando padrão');
+    console.log('Arquivo catalog.json inválido, usando padrão');
   }
-  
-  // Fallback para padrão (funciona no Vercel)
   return DEFAULT_CATALOG;
 }
 
-function writeCatalogFile(ids) {
-  try {
-    // Tenta salvar no arquivo (funciona localmente)
-    if (process.env.NODE_ENV !== 'production') {
-      fs.writeFileSync(CATALOG_FILE, JSON.stringify(ids, null, 2), 'utf8');
+async function redisGet() {
+  const res = await axios.get(`${UPSTASH_URL}/get/${REDIS_KEY}`, {
+    headers: { Authorization: `Bearer ${UPSTASH_TOKEN}` },
+    timeout: 5000
+  });
+  const raw = res.data && res.data.result;
+  if (!raw) return null;
+  try { return JSON.parse(raw); } catch (e) { return null; }
+}
+
+async function redisSet(items) {
+  await axios.post(`${UPSTASH_URL}/set/${REDIS_KEY}`, encodeURIComponent(JSON.stringify(items)), {
+    headers: { Authorization: `Bearer ${UPSTASH_TOKEN}` },
+    timeout: 5000
+  });
+}
+
+let CATALOG_ITEMS = [];
+
+async function loadCatalog() {
+  if (useRedis) {
+    try {
+      const remote = await redisGet();
+      if (Array.isArray(remote)) return remote.map(normalizeItem);
+    } catch (e) {
+      console.log('Falha ao ler do Redis:', e.message);
     }
-  } catch (e) {
-    console.log('Não foi possível salvar o arquivo (esperado no Vercel)');
+  }
+  return readCatalogFile();
+}
+
+async function persistCatalog() {
+  if (useRedis) {
+    try {
+      await redisSet(CATALOG_ITEMS);
+      return;
+    } catch (e) {
+      console.log('Falha ao salvar no Redis:', e.message);
+      return;
+    }
+  }
+  if (!IS_PROD) {
+    try {
+      fs.writeFileSync(CATALOG_FILE, JSON.stringify(CATALOG_ITEMS, null, 2), 'utf8');
+    } catch (e) {
+      console.log('Não foi possível salvar catalog.json:', e.message);
+    }
   }
 }
 
-// --- catálogo em memória com persistência em arquivo ---
-let CATALOG_ITEMS = readCatalogFile();
+let loadedPromise = null;
+function ensureLoaded() {
+  if (!loadedPromise) {
+    loadedPromise = loadCatalog()
+      .then(items => { CATALOG_ITEMS = items; })
+      .catch(err => console.error('Erro ao carregar catálogo:', err.message));
+  }
+  return loadedPromise;
+}
 
 // --- cache simples para reduzir chamadas ao oEmbed ---
 let cache = { ts: 0, items: [] };
-const CACHE_TTL = 1000 * 60 * 5; // 5 minutos
+const CACHE_TTL = 1000 * 60 * 5;
 
-// --- função que consulta oEmbed do YouTube ---
 async function fetchOEmbed(item) {
-  const id = item.id || item;
+  const id = item.id;
   try {
     const url = `https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${id}&format=json`;
     const res = await axios.get(url, { timeout: 5000 });
@@ -69,22 +125,30 @@ async function fetchOEmbed(item) {
       title: res.data.title,
       author_name: res.data.author_name,
       thumb: item.thumb || res.data.thumbnail_url,
-      html: res.data.html
+      category: item.category,
+      description: item.description
     };
   } catch (err) {
-    return { id, title: `Vídeo ${id}`, author_name: '', thumb: item.thumb || `https://img.youtube.com/vi/${id}/hqdefault.jpg` };
+    return {
+      id,
+      title: `Vídeo ${id}`,
+      author_name: '',
+      thumb: item.thumb || `https://img.youtube.com/vi/${id}/hqdefault.jpg`,
+      category: item.category,
+      description: item.description
+    };
   }
 }
 
 // --- endpoints públicos ---
 app.get('/api/catalog', async (req, res) => {
   try {
+    await ensureLoaded();
     const now = Date.now();
     if (now - cache.ts < CACHE_TTL && cache.items.length) {
       return res.json({ items: cache.items, cached: true });
     }
-    const promises = CATALOG_ITEMS.map(item => fetchOEmbed(item));
-    const items = await Promise.all(promises);
+    const items = await Promise.all(CATALOG_ITEMS.map(fetchOEmbed));
     cache = { ts: now, items };
     res.json({ items, cached: false });
   } catch (err) {
@@ -93,24 +157,44 @@ app.get('/api/catalog', async (req, res) => {
   }
 });
 
-app.get('/api/ids', (req, res) => res.json({ items: CATALOG_ITEMS }));
+app.get('/api/ids', async (req, res) => {
+  await ensureLoaded();
+  res.json({ items: CATALOG_ITEMS });
+});
 
-app.post('/api/catalog/add', (req, res) => {
-  const { id, thumb, category, description } = req.body;
-  if (!id) return res.status(400).json({ error: 'id é obrigatório' });
-  if (!CATALOG_ITEMS.find(i => (i.id || i) === id)) {
-    CATALOG_ITEMS.push({ id, thumb: thumb || '', category: category || 'Diversos', description: description || '' });
-    writeCatalogFile(CATALOG_ITEMS);
-    cache.ts = 0; // invalidar cache
+// --- autenticação de admin ---
+function requireAdmin(req, res, next) {
+  const token = process.env.ADMIN_TOKEN;
+  if (token) {
+    if (req.get('x-admin-token') === token) return next();
+    return res.status(401).json({ error: 'Token de administrador inválido ou ausente' });
+  }
+  if (IS_PROD) {
+    return res.status(401).json({ error: 'ADMIN_TOKEN não configurado no servidor' });
+  }
+  next(); // ambiente local sem ADMIN_TOKEN: liberado para facilitar o desenvolvimento
+}
+
+app.post('/api/catalog/add', requireAdmin, async (req, res) => {
+  await ensureLoaded();
+  const { id, thumb = '', category = '', description = '' } = req.body || {};
+  if (!YOUTUBE_ID_RE.test(String(id || ''))) {
+    return res.status(400).json({ error: 'ID inválido: informe os 11 caracteres do vídeo (letras, números, - ou _)' });
+  }
+  if (!CATALOG_ITEMS.some(i => i.id === id)) {
+    CATALOG_ITEMS.push(normalizeItem({ id, thumb, category, description }));
+    await persistCatalog();
+    cache.ts = 0;
   }
   res.json({ ok: true, items: CATALOG_ITEMS });
 });
 
-app.post('/api/catalog/remove', (req, res) => {
-  const { id } = req.body;
+app.post('/api/catalog/remove', requireAdmin, async (req, res) => {
+  await ensureLoaded();
+  const { id } = req.body || {};
   if (!id) return res.status(400).json({ error: 'id é obrigatório' });
-  CATALOG_ITEMS = CATALOG_ITEMS.filter(x => (x.id || x) !== id);
-  writeCatalogFile(CATALOG_ITEMS);
+  CATALOG_ITEMS = CATALOG_ITEMS.filter(x => x.id !== id);
+  await persistCatalog();
   cache.ts = 0;
   res.json({ ok: true, items: CATALOG_ITEMS });
 });
@@ -119,12 +203,15 @@ app.post('/api/catalog/remove', (req, res) => {
 const clientPath = path.join(__dirname, '../client');
 app.use(express.static(clientPath));
 
-// Garantir que qualquer rota desconhecida retorne index.html
 app.get('*', (req, res) => {
+  if (req.path.startsWith('/api/')) return res.status(404).json({ error: 'Rota não encontrada' });
   res.sendFile(path.join(clientPath, 'index.html'));
 });
 
-// --- iniciar servidor ---
-app.listen(PORT, () => {
-  console.log(`Server rodando na porta ${PORT}`);
-});
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`Server rodando na porta ${PORT} (armazenamento: ${useRedis ? 'Redis' : 'arquivo local'})`);
+  });
+}
+
+module.exports = app;
