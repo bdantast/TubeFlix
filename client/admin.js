@@ -35,6 +35,14 @@ function authHeaders() {
   return token ? { 'x-admin-token': token } : {};
 }
 
+function checkPersisted(data) {
+  if (data && data.persisted === false) {
+    alert('ATENÇÃO: a alteração foi aplicada apenas temporariamente e NÃO foi salva permanentemente.\n\n' +
+      'Verifique no servidor (Vercel) as variáveis UPSTASH_REDIS_REST_URL e UPSTASH_REDIS_REST_TOKEN ' +
+      'e faça um novo deploy. Você pode conferir em /api/health se o Redis está configurado.');
+  }
+}
+
 async function fetchIds() {
   try {
     const res = await fetch(`${API_BASE}/api/ids`, { cache: 'no-store' });
@@ -123,6 +131,7 @@ async function addId(id, thumb, title, category, description) {
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(data.error || 'HTTP ' + res.status);
+    checkPersisted(data);
     await loadAndRender();
     alert('ID adicionado com sucesso');
   } catch (err) {
@@ -141,6 +150,7 @@ async function removeId(id) {
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(data.error || 'HTTP ' + res.status);
+    checkPersisted(data);
     await loadAndRender();
     alert('ID removido');
   } catch (err) {
@@ -158,6 +168,7 @@ async function updateItem(id, thumb, title, category, description) {
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(data.error || 'HTTP ' + res.status);
+    checkPersisted(data);
     await loadAndRender();
     alert('Alterações salvas');
   } catch (err) {
@@ -231,6 +242,7 @@ confirmImportBtn.addEventListener('click', async () => {
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(data.error || 'HTTP ' + res.status);
+    checkPersisted(data);
     importBox.style.display = 'none';
     importTextarea.value = '';
     await loadAndRender();

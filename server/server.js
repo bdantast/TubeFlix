@@ -87,19 +87,22 @@ async function persistCatalog() {
   if (useRedis) {
     try {
       await redisSet(CATALOG_ITEMS);
-      return;
+      return true;
     } catch (e) {
-      console.log('Falha ao salvar no Redis:', e.message);
-      return;
+      console.error('Falha ao salvar no Redis:', e.message);
+      return false;
     }
   }
   if (!IS_PROD) {
     try {
       fs.writeFileSync(CATALOG_FILE, JSON.stringify(CATALOG_ITEMS, null, 2), 'utf8');
+      return true;
     } catch (e) {
-      console.log('Não foi possível salvar catalog.json:', e.message);
+      console.error('Não foi possível salvar catalog.json:', e.message);
+      return false;
     }
   }
+  return false;
 }
 
 let loadedPromise = null;
@@ -140,6 +143,15 @@ async function fetchOEmbed(item) {
     };
   }
 }
+
+app.get('/api/health', (req, res) => {
+  res.json({
+    ok: true,
+    redisConfigured: useRedis,
+    nodeEnv: process.env.NODE_ENV || null,
+    totalItens: CATALOG_ITEMS.length
+  });
+});
 
 // --- endpoints públicos ---
 app.get('/api/catalog', async (req, res) => {
@@ -184,10 +196,11 @@ app.post('/api/catalog/add', requireAdmin, async (req, res) => {
   }
   if (!CATALOG_ITEMS.some(i => i.id === id)) {
     CATALOG_ITEMS.push(normalizeItem({ id, thumb, title, category, description }));
-    await persistCatalog();
+    const persisted = await persistCatalog();
     cache.ts = 0;
+    return res.json({ ok: true, persisted, items: CATALOG_ITEMS });
   }
-  res.json({ ok: true, items: CATALOG_ITEMS });
+  res.json({ ok: true, persisted: true, items: CATALOG_ITEMS });
 });
 
 app.post('/api/catalog/remove', requireAdmin, async (req, res) => {
@@ -195,9 +208,9 @@ app.post('/api/catalog/remove', requireAdmin, async (req, res) => {
   const { id } = req.body || {};
   if (!id) return res.status(400).json({ error: 'id é obrigatório' });
   CATALOG_ITEMS = CATALOG_ITEMS.filter(x => x.id !== id);
-  await persistCatalog();
+  const persisted = await persistCatalog();
   cache.ts = 0;
-  res.json({ ok: true, items: CATALOG_ITEMS });
+  res.json({ ok: true, persisted, items: CATALOG_ITEMS });
 });
 
 app.post('/api/catalog/update', requireAdmin, async (req, res) => {
@@ -213,9 +226,9 @@ app.post('/api/catalog/update', requireAdmin, async (req, res) => {
   item.title = updated.title;
   item.category = updated.category;
   item.description = updated.description;
-  await persistCatalog();
+  const persisted = await persistCatalog();
   cache.ts = 0;
-  res.json({ ok: true, items: CATALOG_ITEMS });
+  res.json({ ok: true, persisted, items: CATALOG_ITEMS });
 });
 
 app.post('/api/catalog/import', requireAdmin, async (req, res) => {
@@ -232,9 +245,9 @@ app.post('/api/catalog/import', requireAdmin, async (req, res) => {
     clean.push(it);
   }
   CATALOG_ITEMS = clean;
-  await persistCatalog();
+  const persisted = await persistCatalog();
   cache.ts = 0;
-  res.json({ ok: true, imported: clean.length, items: CATALOG_ITEMS });
+  res.json({ ok: true, persisted, imported: clean.length, items: CATALOG_ITEMS });
 });
 
 // --- servir client estático e SPA fallback ---
