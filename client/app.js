@@ -16,7 +16,7 @@ const closeModalBtn = document.getElementById('close-modal');
 
 let ALL_ITEMS = [];
 let currentQuery = '';
-const PREVIEW_START = 600; // prévias começam em 10 minutos do vídeo
+const PREVIEW_START = 750; // prévias começam em 12min30 do vídeo
 
 function thumbFor(it) {
   return it.thumb || `https://img.youtube.com/vi/${it.id}/hqdefault.jpg`;
