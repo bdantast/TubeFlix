@@ -31,6 +31,7 @@
     .token-row{margin-bottom:16px}
     #admin-token{width:280px}
     #new-id{width:220px}
+    #new-title{flex:1;min-width:240px}
     #new-thumb{flex:1;min-width:260px}
     #new-category{width:150px}
     #new-description{flex:1;min-width:240px}
@@ -43,6 +44,10 @@
     .item-info small{display:block;color:var(--muted);font-size:12px;margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
     .remove{background:transparent;border:1px solid var(--line);color:var(--muted);padding:8px 14px;font-weight:600;font-size:13px}
     .remove:hover{background:var(--accent);border-color:var(--accent);color:#fff}
+    .edit{background:transparent;border:1px solid var(--line);color:var(--text);padding:8px 14px;font-weight:600;font-size:13px}
+    .edit:hover{border-color:var(--accent);color:#fff;background:rgba(229,9,20,.18)}
+    .item-actions{display:flex;gap:8px}
+    .panel.editing{border-color:rgba(229,9,20,.55)}
     .empty-state{padding:40px;text-align:center;color:var(--muted)}
   </style>
 </head>
@@ -63,10 +68,12 @@
       </div>
       <div class="form-group">
         <input id="new-id" placeholder="ID do YouTube (ex: dQw4w9WgXcQ)">
+        <input id="new-title" placeholder="Nome do filme (opcional - substitui o título do YouTube)">
         <input id="new-thumb" placeholder="URL da thumbnail https://... (opcional)">
         <input id="new-category" placeholder="Categoria">
         <input id="new-description" placeholder="Descrição curta do vídeo">
         <button id="add-btn">Adicionar</button>
+        <button id="cancel-btn" class="btn-secondary" style="display:none">Cancelar edição</button>
         <button id="refresh-btn" class="btn-secondary">Atualizar lista</button>
       </div>
     </div>

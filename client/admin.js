@@ -7,13 +7,19 @@ const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({
 }[c]));
 
 const newIdInput = document.getElementById('new-id');
+const newTitleInput = document.getElementById('new-title');
 const newThumbInput = document.getElementById('new-thumb');
 const newCategoryInput = document.getElementById('new-category');
 const newDescriptionInput = document.getElementById('new-description');
 const tokenInput = document.getElementById('admin-token');
 const addBtn = document.getElementById('add-btn');
+const cancelBtn = document.getElementById('cancel-btn');
 const refreshBtn = document.getElementById('refresh-btn');
 const idsList = document.getElementById('ids-list');
+const formPanel = document.querySelector('.panel');
+
+let editingId = null;
+let cachedItems = [];
 
 tokenInput.value = localStorage.getItem(TOKEN_KEY) || '';
 tokenInput.addEventListener('input', () => localStorage.setItem(TOKEN_KEY, tokenInput.value.trim()));
@@ -46,32 +52,68 @@ function renderIds(items) {
       <div class="item">
         <img class="item-thumb" src="${esc(thumb)}" alt="" loading="lazy">
         <div class="item-info">
-          <strong>${esc(item.id)}</strong>
+          <strong>${esc(item.title || item.id)}</strong>
+          ${item.title ? `<small>ID: ${esc(item.id)} · título do YouTube substituído</small>` : ''}
           <small>Categoria: ${esc(item.category || 'Diversos')}</small>
           <small>Descrição: ${esc((item.description || '').substring(0, 70))}</small>
-          ${item.thumb ? `<small>Thumb personalizada: ${esc(item.thumb)}</small>` : ''}
+          <small>Thumbnail: ${item.thumb ? 'personalizada' : 'automática do YouTube'}</small>
         </div>
-        <button data-id="${esc(item.id)}" class="remove">Remover</button>
+        <div class="item-actions">
+          <button data-id="${esc(item.id)}" class="edit">Editar</button>
+          <button data-id="${esc(item.id)}" class="remove">Remover</button>
+        </div>
       </div>`;
   }).join('');
 }
 
 idsList.addEventListener('click', async e => {
-  const btn = e.target.closest('.remove');
-  if (!btn) return;
-  await removeId(btn.dataset.id);
+  const editBtn = e.target.closest('.edit');
+  if (editBtn) return startEdit(editBtn.dataset.id);
+  const removeBtn = e.target.closest('.remove');
+  if (removeBtn) await removeId(removeBtn.dataset.id);
 });
 
-async function loadAndRender() {
-  renderIds(await fetchIds());
+function startEdit(id) {
+  const it = cachedItems.find(x => x.id === id);
+  if (!it) return;
+  editingId = id;
+  newIdInput.value = it.id;
+  newIdInput.disabled = true;
+  newTitleInput.value = it.title || '';
+  newThumbInput.value = it.thumb || '';
+  newCategoryInput.value = it.category || '';
+  newDescriptionInput.value = it.description || '';
+  addBtn.textContent = 'Salvar alterações';
+  cancelBtn.style.display = '';
+  formPanel.classList.add('editing');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-async function addId(id, thumb, category, description) {
+function resetEdit() {
+  editingId = null;
+  newIdInput.disabled = false;
+  newTitleInput.value = '';
+  newThumbInput.value = '';
+  newCategoryInput.value = '';
+  newDescriptionInput.value = '';
+  addBtn.textContent = 'Adicionar';
+  cancelBtn.style.display = 'none';
+  formPanel.classList.remove('editing');
+}
+
+cancelBtn.addEventListener('click', resetEdit);
+
+async function loadAndRender() {
+  cachedItems = await fetchIds();
+  renderIds(cachedItems);
+}
+
+async function addId(id, thumb, title, category, description) {
   try {
     const res = await fetch(`${API_BASE}/api/catalog/add`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', ...authHeaders() },
-      body: JSON.stringify({ id, thumb, category, description })
+      body: JSON.stringify({ id, thumb, title, category, description })
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(data.error || 'HTTP ' + res.status);
@@ -101,15 +143,41 @@ async function removeId(id) {
   }
 }
 
+async function updateItem(id, thumb, title, category, description) {
+  try {
+    const res = await fetch(`${API_BASE}/api/catalog/update`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...authHeaders() },
+      body: JSON.stringify({ id, thumb, title, category, description })
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || 'HTTP ' + res.status);
+    await loadAndRender();
+    alert('Alterações salvas');
+  } catch (err) {
+    console.error('Erro ao salvar', err);
+    alert(`Erro ao salvar: ${err.message}`);
+  }
+}
+
 addBtn.addEventListener('click', () => {
   const id = (newIdInput.value || '').trim();
   const thumb = (newThumbInput.value || '').trim();
+  const title = (newTitleInput.value || '').trim();
   const category = (newCategoryInput.value || '').trim();
   const description = (newDescriptionInput.value || '').trim();
+
+  if (editingId) {
+    updateItem(editingId, thumb, title, category || 'Diversos', description);
+    resetEdit();
+    return;
+  }
+
   if (!id) return alert('Digite um ID');
   if (!/^[A-Za-z0-9_-]{11}$/.test(id)) return alert('ID inválido: deve ter exatamente 11 caracteres (letras, números, - ou _)');
-  addId(id, thumb, category || 'Diversos', description);
+  addId(id, thumb, title, category || 'Diversos', description);
   newIdInput.value = '';
+  newTitleInput.value = '';
   newThumbInput.value = '';
   newCategoryInput.value = '';
   newDescriptionInput.value = '';
