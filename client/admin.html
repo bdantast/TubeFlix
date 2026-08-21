@@ -49,6 +49,9 @@
     .item-actions{display:flex;gap:8px}
     .panel.editing{border-color:rgba(229,9,20,.55)}
     #import-textarea{width:100%;min-height:140px;font-family:'Consolas','Courier New',monospace;font-size:12px;resize:vertical}
+    .check{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--text);cursor:pointer;padding:0 4px}
+    .check input{width:18px;height:18px;accent-color:var(--accent);cursor:pointer}
+    .feat-badge{color:#f5c518;font-weight:600}
     .empty-state{padding:40px;text-align:center;color:var(--muted)}
   </style>
 </head>
@@ -73,6 +76,7 @@
         <input id="new-thumb" placeholder="URL da thumbnail https://... (opcional)">
         <input id="new-category" placeholder="Categoria">
         <input id="new-description" placeholder="Descrição curta do vídeo">
+        <label class="check"><input type="checkbox" id="new-featured"> <span>Destacar no topo (hero)</span></label>
         <button id="add-btn">Adicionar</button>
         <button id="cancel-btn" class="btn-secondary" style="display:none">Cancelar edição</button>
         <button id="refresh-btn" class="btn-secondary">Atualizar lista</button>

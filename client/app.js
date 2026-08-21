@@ -92,7 +92,8 @@ function setupHero(items) {
   const dotsEl = document.getElementById('hero-dots');
   clearInterval(heroTimer);
   if (!slidesEl || !dotsEl || !items.length) return;
-  heroSlides = items.slice(0, Math.min(6, items.length));
+  const pool = items.filter(i => i.featured);
+  heroSlides = (pool.length ? pool : items).slice(0, 6);
   slidesEl.innerHTML = heroSlides.map((it, i) =>
     `<div class="hero-bg${i === 0 ? ' active' : ''}" style="background-image:url('${esc(thumbFor(it))}')"><div class="hero-video" aria-hidden="true"></div></div>`
   ).join('');

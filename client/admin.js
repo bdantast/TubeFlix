@@ -11,6 +11,7 @@ const newTitleInput = document.getElementById('new-title');
 const newThumbInput = document.getElementById('new-thumb');
 const newCategoryInput = document.getElementById('new-category');
 const newDescriptionInput = document.getElementById('new-description');
+const newFeaturedInput = document.getElementById('new-featured');
 const tokenInput = document.getElementById('admin-token');
 const addBtn = document.getElementById('add-btn');
 const cancelBtn = document.getElementById('cancel-btn');
@@ -67,6 +68,7 @@ function renderIds(items) {
         <img class="item-thumb" src="${esc(thumb)}" alt="" loading="lazy">
         <div class="item-info">
           <strong>${esc(item.title || item.id)}</strong>
+          ${item.featured ? '<small class="feat-badge">★ No destaque do topo</small>' : ''}
           ${item.title ? `<small>ID: ${esc(item.id)} · título do YouTube substituído</small>` : ''}
           <small>Categoria: ${esc(item.category || 'Diversos')}</small>
           <small>Descrição: ${esc((item.description || '').substring(0, 70))}</small>
@@ -97,6 +99,7 @@ function startEdit(id) {
   newThumbInput.value = it.thumb || '';
   newCategoryInput.value = it.category || '';
   newDescriptionInput.value = it.description || '';
+  newFeaturedInput.checked = Boolean(it.featured);
   addBtn.textContent = 'Salvar alterações';
   cancelBtn.style.display = '';
   formPanel.classList.add('editing');
@@ -110,6 +113,7 @@ function resetEdit() {
   newThumbInput.value = '';
   newCategoryInput.value = '';
   newDescriptionInput.value = '';
+  newFeaturedInput.checked = false;
   addBtn.textContent = 'Adicionar';
   cancelBtn.style.display = 'none';
   formPanel.classList.remove('editing');
@@ -122,12 +126,12 @@ async function loadAndRender() {
   renderIds(cachedItems);
 }
 
-async function addId(id, thumb, title, category, description) {
+async function addId(id, thumb, title, category, description, featured) {
   try {
     const res = await fetch(`${API_BASE}/api/catalog/add`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', ...authHeaders() },
-      body: JSON.stringify({ id, thumb, title, category, description })
+      body: JSON.stringify({ id, thumb, title, category, description, featured })
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(data.error || 'HTTP ' + res.status);
@@ -159,12 +163,12 @@ async function removeId(id) {
   }
 }
 
-async function updateItem(id, thumb, title, category, description) {
+async function updateItem(id, thumb, title, category, description, featured) {
   try {
     const res = await fetch(`${API_BASE}/api/catalog/update`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', ...authHeaders() },
-      body: JSON.stringify({ id, thumb, title, category, description })
+      body: JSON.stringify({ id, thumb, title, category, description, featured })
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(data.error || 'HTTP ' + res.status);
@@ -183,21 +187,23 @@ addBtn.addEventListener('click', () => {
   const title = (newTitleInput.value || '').trim();
   const category = (newCategoryInput.value || '').trim();
   const description = (newDescriptionInput.value || '').trim();
+  const featured = newFeaturedInput.checked;
 
   if (editingId) {
-    updateItem(editingId, thumb, title, category || 'Diversos', description);
+    updateItem(editingId, thumb, title, category || 'Diversos', description, featured);
     resetEdit();
     return;
   }
 
   if (!id) return alert('Digite um ID');
   if (!/^[A-Za-z0-9_-]{11}$/.test(id)) return alert('ID inválido: deve ter exatamente 11 caracteres (letras, números, - ou _)');
-  addId(id, thumb, title, category || 'Diversos', description);
+  addId(id, thumb, title, category || 'Diversos', description, featured);
   newIdInput.value = '';
   newTitleInput.value = '';
   newThumbInput.value = '';
   newCategoryInput.value = '';
   newDescriptionInput.value = '';
+  newFeaturedInput.checked = false;
 });
 
 refreshBtn.addEventListener('click', loadAndRender);
