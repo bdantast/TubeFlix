@@ -218,6 +218,25 @@ app.post('/api/catalog/update', requireAdmin, async (req, res) => {
   res.json({ ok: true, items: CATALOG_ITEMS });
 });
 
+app.post('/api/catalog/import', requireAdmin, async (req, res) => {
+  await ensureLoaded();
+  const body = req.body || {};
+  const list = Array.isArray(body) ? body : body.items;
+  if (!Array.isArray(list)) return res.status(400).json({ error: 'Envie um array de vídeos ou { items: [...] }' });
+  const seen = new Set();
+  const clean = [];
+  for (const raw of list) {
+    const it = normalizeItem(raw);
+    if (!YOUTUBE_ID_RE.test(it.id) || seen.has(it.id)) continue;
+    seen.add(it.id);
+    clean.push(it);
+  }
+  CATALOG_ITEMS = clean;
+  await persistCatalog();
+  cache.ts = 0;
+  res.json({ ok: true, imported: clean.length, items: CATALOG_ITEMS });
+});
+
 // --- servir client estático e SPA fallback ---
 const clientPath = path.join(__dirname, '../client');
 app.use(express.static(clientPath));

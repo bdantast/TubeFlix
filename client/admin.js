@@ -15,6 +15,12 @@ const tokenInput = document.getElementById('admin-token');
 const addBtn = document.getElementById('add-btn');
 const cancelBtn = document.getElementById('cancel-btn');
 const refreshBtn = document.getElementById('refresh-btn');
+const exportBtn = document.getElementById('export-btn');
+const importBtn = document.getElementById('import-btn');
+const importBox = document.getElementById('import-box');
+const importTextarea = document.getElementById('import-textarea');
+const confirmImportBtn = document.getElementById('confirm-import-btn');
+const cancelImportBtn = document.getElementById('cancel-import-btn');
 const idsList = document.getElementById('ids-list');
 const formPanel = document.querySelector('.panel');
 
@@ -184,5 +190,55 @@ addBtn.addEventListener('click', () => {
 });
 
 refreshBtn.addEventListener('click', loadAndRender);
+
+exportBtn.addEventListener('click', async () => {
+  const items = await fetchIds();
+  if (!items.length) return alert('Catálogo vazio, nada para exportar.');
+  const blob = new Blob([JSON.stringify(items, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'catalogo-tubeflix.json';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(a.href);
+});
+
+importBtn.addEventListener('click', () => {
+  importBox.style.display = importBox.style.display === 'none' ? 'block' : 'none';
+});
+
+cancelImportBtn.addEventListener('click', () => {
+  importBox.style.display = 'none';
+  importTextarea.value = '';
+});
+
+confirmImportBtn.addEventListener('click', async () => {
+  let parsed;
+  try {
+    parsed = JSON.parse(importTextarea.value);
+  } catch (e) {
+    return alert('JSON inválido. Cole exatamente o conteúdo exportado.');
+  }
+  const body = Array.isArray(parsed) ? { items: parsed } : parsed;
+  if (!body || !Array.isArray(body.items)) return alert('Formato esperado: um array de vídeos ou { "items": [...] }.');
+  if (!confirm(`Substituir TODO o catálogo atual pelos ${body.items.length} vídeos do JSON?`)) return;
+  try {
+    const res = await fetch(`${API_BASE}/api/catalog/import`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...authHeaders() },
+      body: JSON.stringify(body)
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || 'HTTP ' + res.status);
+    importBox.style.display = 'none';
+    importTextarea.value = '';
+    await loadAndRender();
+    alert(`Catálogo substituído: ${data.imported} vídeos importados.`);
+  } catch (err) {
+    console.error('Erro ao importar', err);
+    alert(`Erro ao importar: ${err.message}`);
+  }
+});
 
 window.addEventListener('load', loadAndRender);

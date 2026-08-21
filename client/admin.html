@@ -48,6 +48,7 @@
     .edit:hover{border-color:var(--accent);color:#fff;background:rgba(229,9,20,.18)}
     .item-actions{display:flex;gap:8px}
     .panel.editing{border-color:rgba(229,9,20,.55)}
+    #import-textarea{width:100%;min-height:140px;font-family:'Consolas','Courier New',monospace;font-size:12px;resize:vertical}
     .empty-state{padding:40px;text-align:center;color:var(--muted)}
   </style>
 </head>
@@ -75,6 +76,21 @@
         <button id="add-btn">Adicionar</button>
         <button id="cancel-btn" class="btn-secondary" style="display:none">Cancelar edição</button>
         <button id="refresh-btn" class="btn-secondary">Atualizar lista</button>
+        <span style="flex:1"></span>
+        <button id="export-btn" class="btn-secondary">Exportar catálogo</button>
+        <button id="import-btn" class="btn-secondary">Importar catálogo</button>
+      </div>
+
+      <div id="import-box" style="display:none;margin-top:14px">
+        <p style="margin:0 0 8px;color:var(--muted);font-size:13px">
+          Cole abaixo o JSON exportado anteriormente. <strong style="color:var(--text)">Atenção:</strong> a importação substitui todo o catálogo atual.
+        </p>
+        <textarea id="import-textarea" placeholder='[{"id":"dQw4w9WgXcQ","title":"Meu filme","thumb":"","category":"Filmes","description":"..."}]'></textarea>
+        <div class="form-group" style="margin-top:10px">
+          <button id="confirm-import-btn">Confirmar importação</button>
+          <button id="cancel-import-btn" class="btn-secondary">Fechar</button>
+        </div>
+      </div>
       </div>
     </div>
 
