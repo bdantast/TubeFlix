@@ -144,13 +144,33 @@ async function fetchOEmbed(item) {
   }
 }
 
-app.get('/api/health', (req, res) => {
-  res.json({
+app.get('/api/health', async (req, res) => {
+  const result = {
     ok: true,
     redisConfigured: useRedis,
     nodeEnv: process.env.NODE_ENV || null,
     totalItens: CATALOG_ITEMS.length
-  });
+  };
+  if (useRedis) {
+    try {
+      await axios.post(`${UPSTASH_URL}/set/tubeflix:health`, 'ok', {
+        headers: { Authorization: `Bearer ${UPSTASH_TOKEN}` },
+        timeout: 5000
+      });
+      const r = await axios.get(`${UPSTASH_URL}/get/tubeflix:health`, {
+        headers: { Authorization: `Bearer ${UPSTASH_TOKEN}` },
+        timeout: 5000
+      });
+      result.redisWritable = r.data && r.data.result === 'ok';
+      result.redisError = null;
+    } catch (e) {
+      result.redisWritable = false;
+      result.redisError = e.response ? `HTTP ${e.response.status} da Upstash` : e.message;
+    }
+  } else {
+    result.redisWritable = false;
+  }
+  res.json(result);
 });
 
 // --- endpoints públicos ---
