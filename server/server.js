@@ -264,6 +264,9 @@ app.post('/api/catalog/import', requireAdmin, async (req, res) => {
     seen.add(it.id);
     clean.push(it);
   }
+  if (!clean.length) {
+    return res.status(400).json({ error: 'Nenhum vídeo válido encontrado no JSON — catálogo mantido como estava' });
+  }
   CATALOG_ITEMS = clean;
   const persisted = await persistCatalog();
   cache.ts = 0;
