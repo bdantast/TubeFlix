@@ -17,6 +17,7 @@ const closeModalBtn = document.getElementById('close-modal');
 let ALL_ITEMS = [];
 let currentQuery = '';
 const PREVIEW_START = 750; // prévias começam em 12min30 do vídeo
+const HERO_SLIDE_MS = 15000; // quanto tempo cada filme fica no hero
 
 function thumbFor(it) {
   return it.thumb || `https://img.youtube.com/vi/${it.id}/hqdefault.jpg`;
@@ -84,7 +85,7 @@ function startHeroRotation() {
   heroTimer = setInterval(() => {
     if (modal && !modal.classList.contains('hidden')) return;
     showHeroSlide((heroIndex + 1) % heroSlides.length);
-  }, 8000);
+  }, HERO_SLIDE_MS);
 }
 
 function setupHero(items) {
