@@ -13,14 +13,31 @@ const searchInput = document.getElementById('search');
 const modal = document.getElementById('player-modal');
 const playerContainer = document.getElementById('player-container');
 const closeModalBtn = document.getElementById('close-modal');
+const chipsEl = document.getElementById('chips');
+const menuBtn = document.getElementById('menu-btn');
+const menuDropdown = document.getElementById('menu-dropdown');
+const catPage = document.getElementById('cat-page');
+const catTitle = document.getElementById('cat-title');
+const catSub = document.getElementById('cat-sub');
+const catGrid = document.getElementById('cat-grid');
+const heroSection = document.getElementById('hero');
 
 let ALL_ITEMS = [];
 let currentQuery = '';
+let activeCategory = '';
 const PREVIEW_START = 750; // prévias começam em 12min30 do vídeo
 const HERO_SLIDE_MS = 15000; // quanto tempo cada filme fica no hero
 
 function thumbFor(it) {
   return it.thumb || `https://img.youtube.com/vi/${it.id}/hqdefault.jpg`;
+}
+
+function categoriesOf(items) {
+  return [...new Set(items.map(i => i.category || 'Diversos'))].sort((a, b) => a.localeCompare(b, 'pt-BR'));
+}
+
+function currentCatFromURL() {
+  return new URLSearchParams(location.search).get('cat') || '';
 }
 
 function openModal(id) {
@@ -153,7 +170,7 @@ function cardHTML(it) {
         <h4 class="hp-title">${esc(it.title || '')}</h4>
         <p class="hp-author">${esc(it.author_name || '')}</p>
         <p class="hp-desc">${esc(it.description || 'Sem descrição.')}</p>
-        <span class="hp-cat">${esc(it.category || 'Diversos')}</span>
+        <a class="hp-cat" href="./?cat=${encodeURIComponent(it.category || 'Diversos')}">${esc(it.category || 'Diversos')}</a>
         <div class="hp-actions">
           <button class="watch hp-watch" data-open="${esc(it.id)}">Assistir</button>
           <a class="hp-yt" href="https://www.youtube.com/watch?v=${encodeURIComponent(it.id)}" target="_blank" rel="noopener">YouTube ↗</a>
@@ -166,7 +183,7 @@ function sectionHTML(cat, videos) {
   return `
     <div class="category-section">
       <div class="section-head">
-        <h3>${esc(cat)}</h3>
+        <h3><a class="sec-link" href="./?cat=${encodeURIComponent(cat)}">${esc(cat)}</a></h3>
         <span class="section-count">${videos.length} ${videos.length === 1 ? 'vídeo' : 'vídeos'}</span>
       </div>
       <button class="row-nav prev" aria-label="Voltar">‹</button>
@@ -178,12 +195,16 @@ function sectionHTML(cat, videos) {
 function renderCatalog(items, query) {
   if (!row) return;
 
+  if (!ALL_ITEMS.length) {
+    row.innerHTML = `<div class="empty-state">Catálogo vazio. Adicione vídeos pela <a href="./admin.html">página de admin</a>.</div>`;
+    return;
+  }
   if (query && !items.length) {
     row.innerHTML = `<div class="empty-state">Nenhum resultado para <strong>"${esc(query)}"</strong>.</div>`;
     return;
   }
-  if (!ALL_ITEMS.length) {
-    row.innerHTML = `<div class="empty-state">Catálogo vazio. Adicione vídeos pela <a href="./admin.html">página de admin</a>.</div>`;
+  if (!query && !items.length && activeCategory) {
+    row.innerHTML = `<div class="empty-state">Nenhum vídeo nesta categoria ainda.</div>`;
     return;
   }
 
@@ -198,14 +219,20 @@ function renderCatalog(items, query) {
     return a.localeCompare(b, 'pt-BR');
   });
 
-  row.innerHTML = sortedCats.map(cat => sectionHTML(cat, categories[cat])).join('');
+  let html = '';
+  if (!activeCategory && !query && ALL_ITEMS.length >= 4) {
+    html += sectionHTML('Adicionados recentemente', [...ALL_ITEMS].slice(-8).reverse());
+  }
+  html += sortedCats.map(cat => sectionHTML(cat, categories[cat])).join('');
+  row.innerHTML = html;
   wireHoverPreviews();
 }
 
 // --- preview de vídeo ao passar o mouse ---
-function wireHoverPreviews() {
+function wireHoverPreviews(scopeEl) {
   if (!window.matchMedia('(hover: hover)').matches) return;
-  row.querySelectorAll('.card').forEach(card => {
+  const root = scopeEl || row;
+  root.querySelectorAll('.card').forEach(card => {
     const holder = card.querySelector('.video-preview');
     if (!holder) return;
     let timer;
@@ -241,13 +268,90 @@ searchInput && searchInput.addEventListener('input', () => {
 });
 
 function applyFilter() {
-  if (!currentQuery) return renderCatalog(ALL_ITEMS);
-  const filtered = ALL_ITEMS.filter(it =>
-    [it.title, it.author_name, it.category, it.description]
-      .some(v => String(v || '').toLowerCase().includes(currentQuery))
-  );
-  renderCatalog(filtered, currentQuery);
+  let list = ALL_ITEMS;
+  if (activeCategory) list = list.filter(it => (it.category || 'Diversos') === activeCategory);
+  if (currentQuery) {
+    list = list.filter(it =>
+      [it.title, it.author_name, it.category, it.description]
+        .some(v => String(v || '').toLowerCase().includes(currentQuery))
+    );
+    return renderCatalog(list, currentQuery);
+  }
+  renderCatalog(list);
 }
+
+// --- chips de filtro por categoria ---
+function buildChips() {
+  if (!chipsEl) return;
+  const cats = categoriesOf(ALL_ITEMS);
+  chipsEl.innerHTML = ['Todos', ...cats].map(c => {
+    const val = c === 'Todos' ? '' : c;
+    return `<button class="chip${val === activeCategory ? ' active' : ''}" data-cat="${esc(val)}">${esc(c)}</button>`;
+  }).join('');
+}
+chipsEl && chipsEl.addEventListener('click', e => {
+  const chip = e.target.closest('.chip');
+  if (!chip) return;
+  activeCategory = chip.dataset.cat || '';
+  buildChips();
+  applyFilter();
+});
+
+// --- menu Categorias no topo direito ---
+function buildMenu() {
+  if (!menuDropdown) return;
+  const cats = categoriesOf(ALL_ITEMS);
+  menuDropdown.innerHTML = cats.length
+    ? cats.map(c => `<a href="./?cat=${encodeURIComponent(c)}">${esc(c)}</a>`).join('')
+    : '<span class="menu-empty">Sem categorias ainda</span>';
+}
+function closeMenu() {
+  menuDropdown && menuDropdown.classList.add('hidden');
+  menuBtn && menuBtn.setAttribute('aria-expanded', 'false');
+}
+menuBtn && menuBtn.addEventListener('click', e => {
+  e.stopPropagation();
+  if (!menuDropdown) return;
+  const hidden = menuDropdown.classList.toggle('hidden');
+  menuBtn.setAttribute('aria-expanded', String(!hidden));
+});
+document.addEventListener('click', e => {
+  if (menuDropdown && !menuDropdown.classList.contains('hidden') && !e.target.closest('.menu')) closeMenu();
+});
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeMenu(); });
+
+// --- página de categoria (?cat=Nome) ---
+function renderCategoryPage(cat) {
+  if (!catPage || !catGrid) return;
+  const items = ALL_ITEMS.filter(it => (it.category || 'Diversos') === cat);
+  document.title = `${cat} · MeuCinema`;
+  if (catTitle) catTitle.textContent = cat;
+  if (catSub) catSub.textContent = items.length
+    ? `${items.length} ${items.length === 1 ? 'vídeo' : 'vídeos'} nesta categoria`
+    : 'Nenhum vídeo nesta categoria ainda.';
+  catGrid.innerHTML = items.map(cardHTML).join('');
+  wireHoverPreviews(catGrid);
+  heroSection && heroSection.classList.add('hidden');
+  chipsEl && chipsEl.classList.add('hidden');
+  row && row.classList.add('hidden');
+  catPage.classList.remove('hidden');
+}
+
+function renderHome() {
+  document.title = 'MeuCinema';
+  heroSection && heroSection.classList.remove('hidden');
+  chipsEl && chipsEl.classList.remove('hidden');
+  row && row.classList.remove('hidden');
+  catPage && catPage.classList.add('hidden');
+  if (catGrid) catGrid.innerHTML = '';
+}
+
+function route() {
+  const cat = currentCatFromURL();
+  if (cat && ALL_ITEMS.length && categoriesOf(ALL_ITEMS).includes(cat)) renderCategoryPage(cat);
+  else { renderHome(); renderCatalog(ALL_ITEMS); }
+}
+window.addEventListener('popstate', route);
 
 async function loadCatalog() {
   try {
@@ -255,8 +359,10 @@ async function loadCatalog() {
     if (!res.ok) throw new Error('HTTP ' + res.status);
     const data = await res.json();
     ALL_ITEMS = data.items || [];
-    renderCatalog(ALL_ITEMS);
-    setupHero(ALL_ITEMS);
+    buildChips();
+    buildMenu();
+    route();
+    if (!currentCatFromURL()) setupHero(ALL_ITEMS);
   } catch (err) {
     console.error('Erro ao carregar catálogo', err);
     if (row) row.innerHTML = '<p class="empty-state">Erro ao carregar o catálogo. Tente recarregar a página.</p>';

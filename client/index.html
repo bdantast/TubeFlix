@@ -18,6 +18,10 @@
   <header class="topbar">
     <a class="logo" href="./">Meu<span>Cinema</span></a>
     <input id="search" type="search" placeholder="Buscar por título, canal, categoria..." autocomplete="off" />
+    <nav class="menu">
+      <button id="menu-btn" class="menu-btn" aria-haspopup="true" aria-expanded="false">Categorias ▾</button>
+      <div id="menu-dropdown" class="menu-dropdown hidden"></div>
+    </nav>
   </header>
 
   <main>
@@ -32,6 +36,17 @@
         </div>
       </div>
       <div class="hero-dots" id="hero-dots"></div>
+    </section>
+
+    <nav class="chips" id="chips" aria-label="Filtrar por categoria"></nav>
+
+    <section class="cat-page hidden" id="cat-page">
+      <div class="cat-head">
+        <a class="back-link" href="./">← Início</a>
+        <h2 id="cat-title"></h2>
+        <p id="cat-sub"></p>
+      </div>
+      <div class="cat-grid" id="cat-grid"></div>
     </section>
 
     <section class="catalog" aria-label="Catálogo de vídeos">

@@ -53,9 +53,13 @@
     .check input{width:18px;height:18px;accent-color:var(--accent);cursor:pointer}
     .feat-badge{color:#f5c518;font-weight:600}
     .empty-state{padding:40px;text-align:center;color:var(--muted)}
+    #env-badge{position:fixed;top:14px;right:14px;z-index:99;padding:6px 14px;border-radius:999px;font-weight:700;font-size:12px;letter-spacing:.6px}
+    #env-badge.prod{background:rgba(229,9,20,.15);border:1px solid #e50914;color:#ff7b84}
+    #env-badge.local{background:rgba(46,204,113,.12);border:1px solid #2ecc71;color:#2ecc71}
   </style>
 </head>
 <body>
+  <span id="env-badge"></span>
   <div class="wrap">
     <a class="back" href="./">← Voltar ao catálogo</a>
     <h2>Admin do <span>Catálogo</span></h2>
@@ -102,5 +106,14 @@
   </div>
 
   <script src="./admin.js"></script>
+  <script>
+    (function () {
+      var b = document.getElementById('env-badge');
+      if (!b) return;
+      var local = ['localhost', '127.0.0.1'].indexOf(location.hostname) > -1 || location.protocol === 'file:';
+      b.textContent = local ? 'AMBIENTE: LOCAL' : 'AMBIENTE: PRODUÇÃO';
+      b.classList.add(local ? 'local' : 'prod');
+    })();
+  </script>
 </body>
 </html>
