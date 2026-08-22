@@ -65,7 +65,7 @@ function renderIds(items) {
     const thumb = item.thumb || `https://img.youtube.com/vi/${encodeURIComponent(item.id)}/hqdefault.jpg`;
     return `
       <div class="item">
-        <img class="item-thumb" src="${esc(thumb)}" alt="" loading="lazy">
+        <img class="item-thumb" src="${esc(thumb)}" alt="" loading="lazy" onerror='this.onerror=null;this.src="https://img.youtube.com/vi/${encodeURIComponent(item.id)}/hqdefault.jpg"'>
         <div class="item-info">
           <strong>${esc(item.title || item.id)}</strong>
           ${item.featured ? '<small class="feat-badge">★ No destaque do topo</small>' : ''}

@@ -25,6 +25,9 @@ function thumbFor(it) {
 
 function openModal(id) {
   if (!playerContainer || !modal) return;
+  const it = ALL_ITEMS.find(x => x.id === id);
+  const modalTitle = document.getElementById('modal-title');
+  if (modalTitle) modalTitle.textContent = it ? (it.title || `Vídeo ${id}`) : `Vídeo ${id}`;
   const openYoutubeBtn = document.getElementById('open-youtube');
   if (openYoutubeBtn) openYoutubeBtn.onclick = () => window.open(`https://www.youtube.com/watch?v=${id}`, '_blank');
   playerContainer.innerHTML = `<iframe src="https://www.youtube.com/embed/${encodeURIComponent(id)}?autoplay=1&rel=0" allow="autoplay; encrypted-media" allowfullscreen title="Player"></iframe>`;
@@ -96,7 +99,7 @@ function setupHero(items) {
   const pool = items.filter(i => i.featured);
   heroSlides = (pool.length ? pool : items).slice(0, 6);
   slidesEl.innerHTML = heroSlides.map((it, i) =>
-    `<div class="hero-bg${i === 0 ? ' active' : ''}" style="background-image:url('${esc(thumbFor(it))}')"><div class="hero-video" aria-hidden="true"></div></div>`
+    `<div class="hero-bg${i === 0 ? ' active' : ''}"><img src="${esc(thumbFor(it))}" alt="" loading="lazy" onerror='this.onerror=null;this.src="https://img.youtube.com/vi/${encodeURIComponent(it.id)}/hqdefault.jpg"'><div class="hero-video" aria-hidden="true"></div></div>`
   ).join('');
   dotsEl.innerHTML = heroSlides.map((_, i) =>
     `<button class="hero-dot${i === 0 ? ' active' : ''}" aria-label="Destaque ${i + 1}"></button>`
@@ -134,7 +137,7 @@ function cardHTML(it) {
   return `
     <article class="card" data-open="${esc(it.id)}">
       <div class="thumb-wrap">
-        <img class="card-thumb" src="${esc(thumbFor(it))}" alt="${esc(it.title || '')}" loading="lazy">
+        <img class="card-thumb" src="${esc(thumbFor(it))}" alt="${esc(it.title || '')}" loading="lazy" onerror='this.onerror=null;this.src="https://img.youtube.com/vi/${encodeURIComponent(it.id)}/hqdefault.jpg"'>
         <div class="video-preview" aria-hidden="true"></div>
         <span class="play-badge">
           <svg viewBox="0 0 24 24" fill="#fff" aria-hidden="true"><circle cx="12" cy="12" r="11" fill="rgba(229,9,20,.95)"/><path d="M9.5 7.5v9l8-4.5z"/></svg>
