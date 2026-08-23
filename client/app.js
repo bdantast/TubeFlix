@@ -9,6 +9,7 @@ const heroTitle = document.getElementById('hero-title');
 const heroDesc = document.getElementById('hero-desc');
 const heroWatchBtn = document.getElementById('watch-btn');
 const heroYoutubeBtn = document.getElementById('hero-youtube');
+const heroShareBtn = document.getElementById('hero-share');
 const searchInput = document.getElementById('search');
 const modal = document.getElementById('player-modal');
 const playerContainer = document.getElementById('player-container');
@@ -47,9 +48,29 @@ function openModal(id) {
   if (modalTitle) modalTitle.textContent = it ? (it.title || `Vídeo ${id}`) : `Vídeo ${id}`;
   const openYoutubeBtn = document.getElementById('open-youtube');
   if (openYoutubeBtn) openYoutubeBtn.onclick = () => window.open(`https://www.youtube.com/watch?v=${id}`, '_blank');
+  const shareBtn = document.getElementById('share-btn');
+  if (shareBtn) shareBtn.onclick = () => shareMovie(id);
   playerContainer.innerHTML = `<iframe src="https://www.youtube.com/embed/${encodeURIComponent(id)}?autoplay=1&rel=0" allow="autoplay; encrypted-media" allowfullscreen title="Player"></iframe>`;
   modal.classList.remove('hidden');
   document.body.style.overflow = 'hidden';
+}
+
+async function shareMovie(id) {
+  const it = ALL_ITEMS.find(x => x.id === id);
+  const title = it ? (it.title || 'Um filme') : 'Um filme';
+  const url = `${location.origin}/?v=${encodeURIComponent(id)}`;
+  const data = { title: `${title} · TubeFlix`, text: `Assista "${title}" no TubeFlix!`, url };
+  try {
+    if (navigator.share) {
+      await navigator.share(data);
+    } else {
+      await navigator.clipboard.writeText(url);
+      alert('Link copiado! Agora é só colar onde quiser.');
+    }
+  } catch (err) {
+    if (err && err.name === 'AbortError') return;
+    prompt('Copie o link do filme:', url);
+  }
 }
 
 function closeModal() {
@@ -89,6 +110,7 @@ function showHeroSlide(i) {
   if (heroDesc) heroDesc.textContent = [it.description, it.author_name, it.year].filter(Boolean).join(' · ');
   if (heroWatchBtn) heroWatchBtn.onclick = () => openModal(it.id);
   if (heroYoutubeBtn) heroYoutubeBtn.onclick = () => window.open(`https://www.youtube.com/watch?v=${it.id}`, '_blank');
+  if (heroShareBtn) heroShareBtn.onclick = () => shareMovie(it.id);
 
   clearHeroPreview();
   heroPreviewTimer = setTimeout(() => {
@@ -173,6 +195,7 @@ function cardHTML(it) {
         <a class="hp-cat" href="./?cat=${encodeURIComponent(it.category || 'Diversos')}">${esc(it.category || 'Diversos')}</a>
         <div class="hp-actions">
           <button class="watch hp-watch" data-open="${esc(it.id)}">Assistir</button>
+          <button class="hp-share" data-share="${esc(it.id)}">Compartilhar</button>
           <a class="hp-yt" href="https://www.youtube.com/watch?v=${encodeURIComponent(it.id)}" target="_blank" rel="noopener">YouTube ↗</a>
         </div>
       </div>
@@ -259,6 +282,8 @@ function wireCardActions(rootEl) {
       return;
     }
     if (e.target.closest('a')) return;
+    const shareEl = e.target.closest('[data-share]');
+    if (shareEl) { shareMovie(shareEl.dataset.share); return; }
     const openEl = e.target.closest('[data-open]');
     if (openEl) openModal(openEl.dataset.open);
   });
@@ -367,6 +392,8 @@ async function loadCatalog() {
     buildMenu();
     route();
     if (!currentCatFromURL()) setupHero(ALL_ITEMS);
+    const vid = new URLSearchParams(location.search).get('v');
+    if (vid && ALL_ITEMS.some(i => i.id === vid)) openModal(vid);
   } catch (err) {
     console.error('Erro ao carregar catálogo', err);
     if (row) row.innerHTML = '<p class="empty-state">Erro ao carregar o catálogo. Tente recarregar a página.</p>';
