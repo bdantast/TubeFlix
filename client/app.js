@@ -25,7 +25,7 @@ const heroSection = document.getElementById('hero');
 let ALL_ITEMS = [];
 let currentQuery = '';
 let activeCategory = '';
-const PREVIEW_START = 750; // prévias começam em 12min30 do vídeo
+const PREVIEW_START = 240; // prévias começam em 4min do vídeo
 const HERO_SLIDE_MS = 15000; // quanto tempo cada filme fica no hero
 
 function thumbFor(it) {
