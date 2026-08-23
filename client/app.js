@@ -249,18 +249,22 @@ function wireHoverPreviews(scopeEl) {
   });
 }
 
-row && row.addEventListener('click', e => {
-  const nav = e.target.closest('.row-nav');
-  if (nav) {
-    const scroller = nav.closest('.category-section').querySelector('.row');
-    const dir = nav.classList.contains('prev') ? -1 : 1;
-    scroller.scrollBy({ left: dir * scroller.clientWidth * 0.85, behavior: 'smooth' });
-    return;
-  }
-  if (e.target.closest('a')) return;
-  const openEl = e.target.closest('[data-open]');
-  if (openEl) openModal(openEl.dataset.open);
-});
+function wireCardActions(rootEl) {
+  rootEl && rootEl.addEventListener('click', e => {
+    const nav = e.target.closest('.row-nav');
+    if (nav) {
+      const scroller = nav.closest('.category-section').querySelector('.row');
+      const dir = nav.classList.contains('prev') ? -1 : 1;
+      scroller.scrollBy({ left: dir * scroller.clientWidth * 0.85, behavior: 'smooth' });
+      return;
+    }
+    if (e.target.closest('a')) return;
+    const openEl = e.target.closest('[data-open]');
+    if (openEl) openModal(openEl.dataset.open);
+  });
+}
+wireCardActions(row);
+wireCardActions(catGrid);
 
 searchInput && searchInput.addEventListener('input', () => {
   currentQuery = searchInput.value.trim().toLowerCase();
