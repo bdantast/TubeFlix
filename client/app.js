@@ -86,7 +86,7 @@ function showHeroSlide(i) {
   bgs.forEach((b, j) => b.classList.toggle('active', j === i));
   document.querySelectorAll('#hero-dots .hero-dot').forEach((d, j) => d.classList.toggle('active', j === i));
   if (heroTitle) heroTitle.textContent = it.title || '';
-  if (heroDesc) heroDesc.textContent = [it.description, it.author_name].filter(Boolean).join(' · ');
+  if (heroDesc) heroDesc.textContent = [it.description, it.author_name, it.year].filter(Boolean).join(' · ');
   if (heroWatchBtn) heroWatchBtn.onclick = () => openModal(it.id);
   if (heroYoutubeBtn) heroYoutubeBtn.onclick = () => window.open(`https://www.youtube.com/watch?v=${it.id}`, '_blank');
 
@@ -162,13 +162,13 @@ function cardHTML(it) {
       </div>
       <div class="card-body">
         <h4 class="card-title">${esc(it.title || '')}</h4>
-        <p class="card-author">${esc(it.author_name || '')}</p>
+        <p class="card-author">${esc(it.author_name || '')}${it.year ? ' · ' + esc(it.year) : ''}</p>
         <p class="card-description">${esc(it.description || '')}</p>
         <button class="watch" data-open="${esc(it.id)}">Assistir</button>
       </div>
       <div class="card-hover-overlay">
         <h4 class="hp-title">${esc(it.title || '')}</h4>
-        <p class="hp-author">${esc(it.author_name || '')}</p>
+        <p class="hp-author">${esc(it.author_name || '')}${it.year ? ' · ' + esc(it.year) : ''}</p>
         <p class="hp-desc">${esc(it.description || 'Sem descrição.')}</p>
         <a class="hp-cat" href="./?cat=${encodeURIComponent(it.category || 'Diversos')}">${esc(it.category || 'Diversos')}</a>
         <div class="hp-actions">

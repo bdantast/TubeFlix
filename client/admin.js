@@ -10,6 +10,7 @@ const newIdInput = document.getElementById('new-id');
 const newTitleInput = document.getElementById('new-title');
 const newThumbInput = document.getElementById('new-thumb');
 const newCategoryInput = document.getElementById('new-category');
+const newYearInput = document.getElementById('new-year');
 const newDescriptionInput = document.getElementById('new-description');
 const newFeaturedInput = document.getElementById('new-featured');
 const tokenInput = document.getElementById('admin-token');
@@ -70,7 +71,7 @@ function renderIds(items) {
           <strong>${esc(item.title || item.id)}</strong>
           ${item.featured ? '<small class="feat-badge">★ No destaque do topo</small>' : ''}
           ${item.title ? `<small>ID: ${esc(item.id)} · título do YouTube substituído</small>` : ''}
-          <small>Categoria: ${esc(item.category || 'Diversos')}</small>
+          <small>Categoria: ${esc(item.category || 'Diversos')}${item.year ? ' · Ano: ' + esc(item.year) : ''}</small>
           <small>Descrição: ${esc((item.description || '').substring(0, 70))}</small>
           <small>Thumbnail: ${item.thumb ? 'personalizada' : 'automática do YouTube'}</small>
         </div>
@@ -98,6 +99,7 @@ function startEdit(id) {
   newTitleInput.value = it.title || '';
   newThumbInput.value = it.thumb || '';
   newCategoryInput.value = it.category || '';
+  newYearInput.value = it.year || '';
   newDescriptionInput.value = it.description || '';
   newFeaturedInput.checked = Boolean(it.featured);
   addBtn.textContent = 'Salvar alterações';
@@ -112,6 +114,7 @@ function resetEdit() {
   newTitleInput.value = '';
   newThumbInput.value = '';
   newCategoryInput.value = '';
+  newYearInput.value = '';
   newDescriptionInput.value = '';
   newFeaturedInput.checked = false;
   addBtn.textContent = 'Adicionar';
@@ -126,12 +129,12 @@ async function loadAndRender() {
   renderIds(cachedItems);
 }
 
-async function addId(id, thumb, title, category, description, featured) {
+async function addId(id, thumb, title, category, description, featured, year) {
   try {
     const res = await fetch(`${API_BASE}/api/catalog/add`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', ...authHeaders() },
-      body: JSON.stringify({ id, thumb, title, category, description, featured })
+      body: JSON.stringify({ id, thumb, title, category, description, featured, year })
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(data.error || 'HTTP ' + res.status);
@@ -163,12 +166,12 @@ async function removeId(id) {
   }
 }
 
-async function updateItem(id, thumb, title, category, description, featured) {
+async function updateItem(id, thumb, title, category, description, featured, year) {
   try {
     const res = await fetch(`${API_BASE}/api/catalog/update`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', ...authHeaders() },
-      body: JSON.stringify({ id, thumb, title, category, description, featured })
+      body: JSON.stringify({ id, thumb, title, category, description, featured, year })
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(data.error || 'HTTP ' + res.status);
@@ -186,22 +189,24 @@ addBtn.addEventListener('click', () => {
   const thumb = (newThumbInput.value || '').trim();
   const title = (newTitleInput.value || '').trim();
   const category = (newCategoryInput.value || '').trim();
+  const year = (newYearInput.value || '').trim();
   const description = (newDescriptionInput.value || '').trim();
   const featured = newFeaturedInput.checked;
 
   if (editingId) {
-    updateItem(editingId, thumb, title, category || 'Diversos', description, featured);
+    updateItem(editingId, thumb, title, category || 'Diversos', description, featured, year);
     resetEdit();
     return;
   }
 
   if (!id) return alert('Digite um ID');
   if (!/^[A-Za-z0-9_-]{11}$/.test(id)) return alert('ID inválido: deve ter exatamente 11 caracteres (letras, números, - ou _)');
-  addId(id, thumb, title, category || 'Diversos', description, featured);
+  addId(id, thumb, title, category || 'Diversos', description, featured, year);
   newIdInput.value = '';
   newTitleInput.value = '';
   newThumbInput.value = '';
   newCategoryInput.value = '';
+  newYearInput.value = '';
   newDescriptionInput.value = '';
   newFeaturedInput.checked = false;
 });

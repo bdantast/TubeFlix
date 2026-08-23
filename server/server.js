@@ -37,6 +37,7 @@ function normalizeItem(item) {
     title: item.title || '',
     category: item.category || 'Diversos',
     description: item.description || '',
+    year: String(item.year || '').trim(),
     featured: Boolean(item.featured)
   };
 }
@@ -136,7 +137,8 @@ async function fetchOEmbed(item) {
       thumb: item.thumb || res.data.thumbnail_url,
       category: item.category,
       description: item.description,
-      featured: item.featured
+      featured: item.featured,
+      year: item.year || ''
     };
   } catch (err) {
     return {
@@ -146,7 +148,8 @@ async function fetchOEmbed(item) {
       thumb: item.thumb || `https://img.youtube.com/vi/${id}/hqdefault.jpg`,
       category: item.category,
       description: item.description,
-      featured: item.featured
+      featured: item.featured,
+      year: item.year || ''
     };
   }
 }
@@ -242,12 +245,12 @@ function requireAdmin(req, res, next) {
 
 app.post('/api/catalog/add', requireAdmin, async (req, res) => {
   await ensureLoaded();
-  const { id, thumb = '', title = '', category = '', description = '', featured = false } = req.body || {};
+  const { id, thumb = '', title = '', category = '', description = '', featured = false, year = '' } = req.body || {};
   if (!YOUTUBE_ID_RE.test(String(id || ''))) {
     return res.status(400).json({ error: 'ID inválido: informe os 11 caracteres do vídeo (letras, números, - ou _)' });
   }
   if (!CATALOG_ITEMS.some(i => i.id === id)) {
-    CATALOG_ITEMS.push(normalizeItem({ id, thumb, title, category, description, featured }));
+    CATALOG_ITEMS.push(normalizeItem({ id, thumb, title, category, description, featured, year }));
     const persisted = await persistCatalog();
     cache.ts = 0;
     return res.json({ ok: true, persisted, items: CATALOG_ITEMS });
@@ -267,18 +270,19 @@ app.post('/api/catalog/remove', requireAdmin, async (req, res) => {
 
 app.post('/api/catalog/update', requireAdmin, async (req, res) => {
   await ensureLoaded();
-  const { id, thumb = '', title = '', category = '', description = '', featured = false } = req.body || {};
+  const { id, thumb = '', title = '', category = '', description = '', featured = false, year = '' } = req.body || {};
   if (!YOUTUBE_ID_RE.test(String(id || ''))) {
     return res.status(400).json({ error: 'ID inválido: informe os 11 caracteres do vídeo (letras, números, - ou _)' });
   }
   const item = CATALOG_ITEMS.find(i => i.id === id);
   if (!item) return res.status(404).json({ error: 'Vídeo não encontrado no catálogo' });
-  const updated = normalizeItem({ id, thumb, title, category, description, featured });
+  const updated = normalizeItem({ id, thumb, title, category, description, featured, year });
   item.thumb = updated.thumb;
   item.title = updated.title;
   item.category = updated.category;
   item.description = updated.description;
   item.featured = updated.featured;
+  item.year = updated.year;
   const persisted = await persistCatalog();
   cache.ts = 0;
   res.json({ ok: true, persisted, items: CATALOG_ITEMS });
