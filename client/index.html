@@ -3,20 +3,23 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <meta name="description" content="MeuCinema — seu catálogo pessoal de vídeos no estilo streaming." />
+  <meta name="description" content="TubeFlix — Filmes Dublados do Youtube 1080p." />
   <link rel="icon" type="image/svg+xml" href="favicon.svg" />
-  <meta property="og:title" content="MeuCinema — seu streaming pessoal de filmes" />
+  <meta property="og:title" content="TubeFlix — Filmes Dublados do Youtube 1080p" />
   <meta property="og:description" content="Catálogo de filmes do YouTube com experiência de streaming: destaques com prévia em vídeo, busca e mais." />
   <meta property="og:image" content="https://tube-flix.vercel.app/og-image.png" />
   <meta property="og:url" content="https://tube-flix.vercel.app/" />
   <meta property="og:type" content="website" />
   <meta name="twitter:card" content="summary_large_image" />
-  <title>MeuCinema</title>
+  <title>TubeFlix — Filmes Dublados do Youtube 1080p</title>
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
   <header class="topbar">
-    <a class="logo" href="./">Meu<span>Cinema</span></a>
+    <a class="logo" href="./">
+      <span class="logo-title">Tube<span>Flix</span></span>
+      <span class="logo-tagline">Filmes Dublados do Youtube 1080p</span>
+    </a>
     <input id="search" type="search" placeholder="Buscar por título, canal, categoria..." autocomplete="off" />
     <nav class="menu">
       <button id="menu-btn" class="menu-btn" aria-haspopup="true" aria-expanded="false">Categorias ▾</button>
@@ -55,7 +58,7 @@
   </main>
 
   <footer>
-    MeuCinema · catálogo pessoal de vídeos do YouTube
+    TubeFlix · Filmes Dublados do Youtube 1080p
   </footer>
 
   <div id="player-modal" class="modal hidden" aria-hidden="true">

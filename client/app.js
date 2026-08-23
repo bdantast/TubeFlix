@@ -328,7 +328,7 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape') closeMenu();
 function renderCategoryPage(cat) {
   if (!catPage || !catGrid) return;
   const items = ALL_ITEMS.filter(it => (it.category || 'Diversos') === cat);
-  document.title = `${cat} · MeuCinema`;
+  document.title = `${cat} · TubeFlix`;
   if (catTitle) catTitle.textContent = cat;
   if (catSub) catSub.textContent = items.length
     ? `${items.length} ${items.length === 1 ? 'vídeo' : 'vídeos'} nesta categoria`
@@ -342,7 +342,7 @@ function renderCategoryPage(cat) {
 }
 
 function renderHome() {
-  document.title = 'MeuCinema';
+  document.title = 'TubeFlix';
   heroSection && heroSection.classList.remove('hidden');
   chipsEl && chipsEl.classList.remove('hidden');
   row && row.classList.remove('hidden');
